@@ -4,14 +4,14 @@ class ItemsController < ApplicationController
   end
   
   def new
-    @item = Item.new
+    @form = InputItemsForm.new
   end
 
   def create
-    @item = Item.new(item_params)
-    
-    if @item.save
-      redirect_to items_path
+    @form = InputItemsForm.new(item_collection_params)
+
+    if @form.save
+      redirect_to root_path
     else
       render :new
     end
@@ -19,7 +19,7 @@ class ItemsController < ApplicationController
 
   private
 
-  def item_params
-    params.require(:item).permit(:code, :name, :price)
+  def item_collection_params
+    params.require(:input_items_form).permit(items_attributes: [:register, :code, :name, :price])
   end
 end
