@@ -1,0 +1,39 @@
+<h1>商品登録</h1>
+
+<div>
+  <%= link_to '一覧へ', items_path %>
+</div>
+
+<div>
+  <% if @form.errors.any? %>
+    <% @form.errors.full_messages.each do |message| %>
+      <li><%= message %>
+    <% end %>
+  <% end %>
+</div>
+
+<div>
+  <%= form_with model: @form, url: items_path, method: :post, local: true do |f| %>
+    <table>
+      <thead>
+        <tr>
+          <th>登録</th>
+          <th>商品コード</th>
+          <th>商品名</th>
+          <th>価格</th>
+        </tr>
+      </thead>
+      <tbody>
+        <%= f.fields_for :items do |i| %>
+          <tr>
+            <td><%= i.check_box :register %></td>
+            <td><%= i.text_field :code %></td>
+            <td><%= i.text_field :name %></td>
+            <td><%= i.text_field :price %></td>
+          </tr>
+        <% end%>
+      </tbody>
+    </table>
+    <%= f.submit '一括登録' %>
+  <% end %>
+</div>
