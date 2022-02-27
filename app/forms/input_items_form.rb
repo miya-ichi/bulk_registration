@@ -12,38 +12,34 @@ class InputItemsForm
 
   # このオブジェクトのインスタンスが作成されたときに実行される
   def initialize(attributes = {})
-    # ここの処理がちょっとよく理解できていません
-    # ActiveModel::Modelのinitializeメソッドを呼び出して、
-    # 受け取った属性を使用できるようにしている？？
+    # super attributesにより、includeしているActiveModel::Modelのinitializeメソッドを呼び出す
+    # そのinitializeメソッドはセッターメソッドを呼び出すことになっているため、
+    # 次で定義しているitems_attributes=(attributes)が呼び出され、itemsに値が格納される
     super attributes
-    # 入力フォームを表示するために、Itemモデルのインスタンスを作成する
+    # super attributesの結果、値が格納された場合は以下の処理は実行されない
+    # 値が格納されていない場合(すなわち、newアクションで新規登録フォームを表示する時)実行される
+    # new.html.erbにてfields_forへ渡すために、表示したい行数分のインスタンスを作成
     self.items = INPUT_ITEM_COUNT.times.map { Item.new } unless self.items.present?
   end
 
-  # ここも曖昧です・・・initializeメソッドから呼び出されている？
-  # フォームから送られてきたパラメータを１行分ずつ分けて配列に入れる。
+  # ActiveModel::Modelのinitializeメソッドから呼び出される
+  # フォームから送られてきたパラメータを１行分ずつ分けて配列に格納する。
   def items_attributes=(attributes)
     self.items = attributes.map { |_, v| Item.new(v) }
   end
 
   def save
-    # チェックした件数分登録するが、途中で例外が発生した場合にロールバックする
-    # 登録したいデータがすべて正常である場合のみ登録できる
     Item.transaction do
-      self.items.each do |item|
-        # チェックした行のデータのみ登録
-        if item.register
-          # ビューでエラーメッセージを表示させたいので、
-          # itemのインスタンスのエラーメッセージをフォームのエラーメッセージとして登録する
-          if item.invalid?
-            item.errors.each do |attr, error|
-              errors.add(attr, error)
-            end
-          end
-          # 例外を出したいのでsave!
-          item.save!
-        end
+      # target_itemsにitem.registerがtrue(登録対象)の行の商品を格納する
+      target_items = items.select { |item| item.register } 
+      target_items.each do |item|
+        item.errors.each { |attr, error| errors.add(attr, error) } if item.invalid?
+        item.save
       end
+      # 重複したエラーメッセージをなくしたい
+      errors.uniq!
+      # バリデーションエラーがあった場合、ロールバックするために例外を発生させる
+      raise StandardError.new("Input Items Form Invalid") if errors.any?
     end
       # 登録が正常に終了した場合trueを返す
       return true
